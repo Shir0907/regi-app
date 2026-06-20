@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>こレジ — 個人事業向けPOSレジ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===================== ヘッダー ===================== -->
+<header class="topbar">
+  <div class="brand" data-nav="home">
+    <span class="logo-mark">こ</span>
+    <span class="logo-text">こ レ ジ</span>
+  </div>
+  <nav class="topnav">
+    <button class="navbtn" data-nav="home">ホーム</button>
+    <button class="navbtn" data-nav="order">注文入力・会計</button>
+    <button class="navbtn" data-nav="products">商品</button>
+    <button class="navbtn" data-nav="sales">売上</button>
+    <button class="navbtn" data-nav="register">点検・精算</button>
+    <button class="navbtn" data-nav="settings">設定</button>
+  </nav>
+  <div class="topright">
+    <span id="shopName" class="shop-name">お店</span>
+    <span class="clock" id="clock">--:--</span>
+  </div>
+</header>
+
+<main id="screen">
+
+<!-- ===================== ホーム ===================== -->
+<section class="screen" data-screen="home">
+  <div class="home-hero">
+    <h1>0円ではじめる、個人事業向けPOSレジ</h1>
+    <p>注文入力から売上分析、点検・精算までこれひとつで。</p>
+  </div>
+  <div class="tile-grid">
+    <button class="tile tile-primary" data-nav="order">
+      <div class="tile-icon">🧾</div>
+      <div class="tile-label">注文入力・会計</div>
+      <div class="tile-sub">商品を選んでお会計</div>
+    </button>
+    <button class="tile" data-nav="products">
+      <div class="tile-icon">📦</div>
+      <div class="tile-label">商品</div>
+      <div class="tile-sub">商品・カテゴリーの登録</div>
+    </button>
+    <button class="tile" data-nav="sales">
+      <div class="tile-icon">📊</div>
+      <div class="tile-label">売上</div>
+      <div class="tile-sub">日別／商品別の売上分析</div>
+    </button>
+    <button class="tile" data-nav="register">
+      <div class="tile-icon">💰</div>
+      <div class="tile-label">点検・精算</div>
+      <div class="tile-sub">レジ締め・つり銭準備</div>
+    </button>
+    <button class="tile" data-nav="history">
+      <div class="tile-icon">📑</div>
+      <div class="tile-label">取引履歴</div>
+      <div class="tile-sub">会計・返品の履歴を確認</div>
+    </button>
+    <button class="tile" data-nav="settings">
+      <div class="tile-icon">⚙️</div>
+      <div class="tile-label">設定</div>
+      <div class="tile-sub">店舗情報・消費税・レシート</div>
+    </button>
+  </div>
+  <div class="home-status">
+    <div class="status-card">
+      <div class="status-label">本日の売上</div>
+      <div class="status-value" id="homeTodaySales">¥0</div>
+    </div>
+    <div class="status-card">
+      <div class="status-label">本日の取引数</div>
+      <div class="status-value" id="homeTodayCount">0</div>
+    </div>
+    <div class="status-card">
+      <div class="status-label">登録商品数</div>
+      <div class="status-value" id="homeProductCount">0</div>
+    </div>
+    <div class="status-card">
+      <div class="status-label">一時保存</div>
+      <div class="status-value" id="homeHoldCount">0</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 注文入力・会計 ===================== -->
+<section class="screen" data-screen="order">
+  <div class="order-layout">
+    <!-- 左：会計伝票 -->
+    <aside class="cart-pane">
+      <div class="cart-header">
+        <div>
+          <div class="cart-title">会計伝票</div>
+          <div class="cart-sub" id="cartTicketSub">新規伝票</div>
+        </div>
+        <div class="cart-header-btns">
+          <button class="ghost-btn" id="btnTicketInfo">伝票情報</button>
+          <button class="ghost-btn" id="btnHoldList">伝票一覧</button>
+        </div>
+      </div>
+      <ul class="cart-items" id="cartItems"></ul>
+      <div class="cart-empty" id="cartEmpty">商品をタッチしてください</div>
+      <div class="cart-totals">
+        <div class="row"><span>小計</span><span id="ttlSubtotal">¥0</span></div>
+        <div class="row"><span>消費税</span><span id="ttlTax">¥0</span></div>
+        <div class="row"><span>割引</span>
+          <span>
+            <button class="mini-btn" id="btnDiscount">設定</button>
+            <span id="ttlDiscount">¥0</span>
+          </span>
+        </div>
+        <div class="row grand"><span>合計</span><span id="ttlGrand">¥0</span></div>
+      </div>
+      <div class="cart-actions">
+        <button class="sub-btn" id="btnHold">一時保存</button>
+        <button class="sub-btn danger" id="btnClearCart">クリア</button>
+        <button class="primary-btn" id="btnToPayment">支払いへ進む ▶</button>
+      </div>
+    </aside>
+
+    <!-- 右：商品選択 -->
+    <section class="product-pane">
+      <div class="cat-bar" id="catBar"></div>
+      <div class="product-grid" id="productGrid"></div>
+      <div class="product-empty" id="productEmpty" style="display:none">
+        まだ商品が登録されていません。<br>
+        「商品」メニューから登録してください。
+      </div>
+    </section>
+  </div>
+</section>
+
+<!-- ===================== 商品 ===================== -->
+<section class="screen" data-screen="products">
+  <div class="page-header">
+    <h2>商品</h2>
+    <div class="page-tabs">
+      <button class="tab on" data-ptab="items">商品一覧</button>
+      <button class="tab" data-ptab="cats">カテゴリー</button>
+    </div>
+  </div>
+
+  <div class="ptab" data-ptab="items">
+    <div class="toolbar">
+      <input type="search" id="productSearch" placeholder="🔍 商品名で検索">
+      <select id="productFilterCat"><option value="">すべてのカテゴリー</option></select>
+      <button class="primary-btn" id="btnAddProduct">＋ 新規商品</button>
+      <button class="ghost-btn" id="btnImportSamples">サンプルデータ投入</button>
+      <button class="ghost-btn" id="btnExportCSV">CSV出力</button>
+    </div>
+    <table class="data-table">
+      <thead><tr>
+        <th>カテゴリー</th><th>商品名</th><th>価格</th><th>税率</th><th>在庫</th><th>バリエーション</th><th></th>
+      </tr></thead>
+      <tbody id="productTbody"></tbody>
+    </table>
+  </div>
+
+  <div class="ptab" data-ptab="cats" style="display:none">
+    <div class="toolbar">
+      <button class="primary-btn" id="btnAddCat">＋ 新規カテゴリー</button>
+    </div>
+    <div class="cat-list" id="catList"></div>
+  </div>
+</section>
+
+<!-- ===================== 売上 ===================== -->
+<section class="screen" data-screen="sales">
+  <div class="page-header">
+    <h2>売上</h2>
+    <div class="page-tabs">
+      <button class="tab on" data-stab="daily">日別売上</button>
+      <button class="tab" data-stab="item">商品別売上</button>
+    </div>
+  </div>
+
+  <div class="stab" data-stab="daily">
+    <div class="toolbar">
+      <label>集計対象
+        <select id="dailyMode">
+          <option value="hour">時間別</option>
+          <option value="day" selected>日別</option>
+          <option value="month">月別</option>
+          <option value="year">年別</option>
+        </select>
+      </label>
+      <label>期間
+        <input type="date" id="dailyFrom">
+        <span>〜</span>
+        <input type="date" id="dailyTo">
+      </label>
+      <button class="primary-btn" id="btnDailyApply">表示する</button>
+      <button class="ghost-btn" id="btnDailyCSV">CSV出力</button>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-l">総売上</div><div class="kpi-v" id="kpiTotal">¥0</div></div>
+      <div class="kpi"><div class="kpi-l">取引数</div><div class="kpi-v" id="kpiCount">0</div></div>
+      <div class="kpi"><div class="kpi-l">客単価</div><div class="kpi-v" id="kpiAvg">¥0</div></div>
+      <div class="kpi"><div class="kpi-l">点数合計</div><div class="kpi-v" id="kpiItems">0</div></div>
+    </div>
+    <div class="chart" id="dailyChart"></div>
+    <table class="data-table">
+      <thead><tr><th id="dailyColKey">日付</th><th>取引数</th><th>点数</th><th>売上</th></tr></thead>
+      <tbody id="dailyTbody"></tbody>
+    </table>
+  </div>
+
+  <div class="stab" data-stab="item" style="display:none">
+    <div class="toolbar">
+      <label>カテゴリー
+        <select id="itemCat"><option value="">すべて</option></select>
+      </label>
+      <label>期間
+        <input type="date" id="itemFrom">
+        <span>〜</span>
+        <input type="date" id="itemTo">
+      </label>
+      <button class="primary-btn" id="btnItemApply">表示する</button>
+      <button class="ghost-btn" id="btnItemCSV">CSV出力</button>
+    </div>
+    <table class="data-table">
+      <thead><tr><th>順位</th><th>商品名</th><th>カテゴリー</th><th>販売数</th><th>売上</th><th>構成比</th></tr></thead>
+      <tbody id="itemTbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 点検・精算 ===================== -->
+<section class="screen" data-screen="register">
+  <div class="page-header"><h2>点検・精算</h2></div>
+  <div class="reg-grid">
+    <div class="card">
+      <h3>つり銭準備金</h3>
+      <div class="big-amount" id="floatAmount">¥0</div>
+      <div class="toolbar">
+        <input type="number" id="floatInput" placeholder="金額を入力">
+        <button class="primary-btn" id="btnSetFloat">登録／変更</button>
+      </div>
+      <p class="hint">レジ開店時のつり銭準備金を登録します。</p>
+    </div>
+
+    <div class="card">
+      <h3>本日の点検</h3>
+      <table class="kv-table" id="checkTable"></table>
+      <button class="ghost-btn" id="btnPrintCheck">🖨 点検レシート出力</button>
+    </div>
+
+    <div class="card span2">
+      <h3>レジ締め（精算）</h3>
+      <p>本日の売上を確定し、精算レシートを発行します。実際のドロア内金額を入力してください。</p>
+      <div class="toolbar">
+        <label>ドロア内現金 <input type="number" id="drawerInput" placeholder="例：18500"></label>
+        <label>翌日へ繰越 <input type="number" id="carryInput" placeholder="つり銭準備金"></label>
+        <button class="primary-btn" id="btnSettle">精算する</button>
+      </div>
+      <div id="settleResult"></div>
+    </div>
+
+    <div class="card span2">
+      <h3>精算履歴</h3>
+      <table class="data-table">
+        <thead><tr><th>日時</th><th>担当</th><th>売上</th><th>取引数</th><th>過不足</th><th></th></tr></thead>
+        <tbody id="settleTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 取引履歴 ===================== -->
+<section class="screen" data-screen="history">
+  <div class="page-header"><h2>取引履歴</h2></div>
+  <div class="toolbar">
+    <label>種別
+      <select id="histType">
+        <option value="">すべて</option>
+        <option value="sale">会計</option>
+        <option value="refund">返品</option>
+        <option value="void">取消</option>
+      </select>
+    </label>
+    <label>期間
+      <input type="date" id="histFrom">
+      <span>〜</span>
+      <input type="date" id="histTo">
+    </label>
+    <button class="primary-btn" id="btnHistApply">絞り込む</button>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>日時</th><th>伝票No</th><th>種別</th><th>点数</th><th>支払方法</th><th>金額</th><th></th></tr></thead>
+    <tbody id="histTbody"></tbody>
+  </table>
+</section>
+
+<!-- ===================== 設定 ===================== -->
+<section class="screen" data-screen="settings">
+  <div class="page-header"><h2>設定</h2></div>
+  <div class="settings-grid">
+    <div class="card">
+      <h3>店舗情報</h3>
+      <label>店舗名 <input type="text" id="setShop"></label>
+      <label>住所 <input type="text" id="setAddr"></label>
+      <label>電話番号 <input type="text" id="setTel"></label>
+      <label>登録番号（インボイス） <input type="text" id="setInvoice"></label>
+    </div>
+    <div class="card">
+      <h3>消費税</h3>
+      <label>税表示
+        <select id="setTaxMode">
+          <option value="incl">内税</option>
+          <option value="excl">外税</option>
+        </select>
+      </label>
+      <label>商品登録時の初期税率
+        <select id="setDefaultRate">
+          <option value="0">非課税 0%</option>
+          <option value="8">軽減税率 8%</option>
+          <option value="10" selected>標準税率 10%</option>
+        </select>
+      </label>
+      <label>端数処理
+        <select id="setRound">
+          <option value="floor">切り捨て</option>
+          <option value="round">四捨五入</option>
+          <option value="ceil">切り上げ</option>
+        </select>
+      </label>
+    </div>
+    <div class="card">
+      <h3>レシート</h3>
+      <label>ヘッダーメッセージ <input type="text" id="setRcHeader" placeholder="例：いつもありがとうございます"></label>
+      <label>フッターメッセージ <input type="text" id="setRcFooter" placeholder="例：またのご来店をお待ちしております"></label>
+      <label><input type="checkbox" id="setRcLogo"> 店名を大きく印字する</label>
+    </div>
+    <div class="card">
+      <h3>支払方法</h3>
+      <p class="hint">会計画面で使用する支払方法を選択します。</p>
+      <div id="paymentMethodList"></div>
+    </div>
+    <div class="card span2">
+      <h3>データ管理</h3>
+      <div class="toolbar">
+        <button class="ghost-btn" id="btnExportAll">📥 全データをJSONエクスポート</button>
+        <button class="ghost-btn" id="btnImportAll">📤 JSONインポート</button>
+        <input type="file" id="importFile" accept=".json" style="display:none">
+        <button class="ghost-btn danger" id="btnResetAll">⚠ 全データ初期化</button>
+      </div>
+    </div>
+  </div>
+  <div class="toolbar">
+    <button class="primary-btn" id="btnSaveSettings">設定を保存</button>
+  </div>
+</section>
+
+</main>
+
+<!-- ===================== モーダル群 ===================== -->
+
+<!-- 商品編集 -->
+<div class="modal" id="modalProduct">
+  <div class="modal-box">
+    <h3 id="prodModalTitle">商品を登録</h3>
+    <div class="form-grid">
+      <label>商品名 <input type="text" id="pmName"></label>
+      <label>カテゴリー
+        <select id="pmCat"></select>
+      </label>
+      <label>価格 <input type="number" id="pmPrice"></label>
+      <label>税率
+        <select id="pmTax">
+          <option value="0">非課税 0%</option>
+          <option value="8">軽減税率 8%</option>
+          <option value="10">標準税率 10%</option>
+          <option value="ask">注文時に選択</option>
+        </select>
+      </label>
+      <label>在庫数 <input type="number" id="pmStock" placeholder="管理しない場合は空欄"></label>
+      <label>バーコード <input type="text" id="pmBarcode"></label>
+      <label class="span2">バリエーション（カンマ区切り：S,M,L など） <input type="text" id="pmVariations"></label>
+      <label class="span2"><input type="checkbox" id="pmDept"> 部門打ち（会計時に価格を入力）</label>
+      <label class="span2">タイル色 <input type="color" id="pmColor" value="#69F0D9"></label>
+    </div>
+    <div class="modal-actions">
+      <button class="ghost-btn danger" id="pmDelete">削除</button>
+      <span style="flex:1"></span>
+      <button class="ghost-btn" data-close>キャンセル</button>
+      <button class="primary-btn" id="pmSave">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- カテゴリー編集 -->
+<div class="modal" id="modalCat">
+  <div class="modal-box">
+    <h3 id="catModalTitle">カテゴリーを登録</h3>
+    <div class="form-grid">
+      <label>カテゴリー名 <input type="text" id="cmName"></label>
+      <label>色 <input type="color" id="cmColor" value="#69F0D9"></label>
+      <label class="span2">担当者（任意） <input type="text" id="cmStaff"></label>
+    </div>
+    <div class="modal-actions">
+      <button class="ghost-btn danger" id="cmDelete">削除</button>
+      <span style="flex:1"></span>
+      <button class="ghost-btn" data-close>キャンセル</button>
+      <button class="primary-btn" id="cmSave">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- バリエーション選択 -->
+<div class="modal" id="modalVariation">
+  <div class="modal-box">
+    <h3 id="varTitle">バリエーションを選択</h3>
+    <div class="var-grid" id="varGrid"></div>
+    <div class="modal-actions">
+      <button class="ghost-btn" data-close>キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- 部門打ち：価格入力 -->
+<div class="modal" id="modalDept">
+  <div class="modal-box">
+    <h3>価格を入力</h3>
+    <div id="deptName" class="dept-name"></div>
+    <div class="keypad-display" id="deptDisplay">0</div>
+    <div class="keypad" id="deptKeypad">
+      <button>7</button><button>8</button><button>9</button>
+      <button>4</button><button>5</button><button>6</button>
+      <button>1</button><button>2</button><button>3</button>
+      <button>00</button><button>0</button><button data-act="back">⌫</button>
+    </div>
+    <div class="modal-actions">
+      <button class="ghost-btn" data-close>キャンセル</button>
+      <button class="primary-btn" id="deptConfirm">追加</button>
+    </div>
+  </div>
+</div>
+
+<!-- 数量・金額編集 -->
+<div class="modal" id="modalLineEdit">
+  <div class="modal-box">
+    <h3 id="lineEditTitle">数量を変更</h3>
+    <div class="keypad-display" id="lineEditDisplay">1</div>
+    <div class="keypad" id="lineEditKeypad">
+      <button>7</button><button>8</button><button>9</button>
+      <button>4</button><button>5</button><button>6</button>
+      <button>1</button><button>2</button><button>3</button>
+      <button>00</button><button>0</button><button data-act="back">⌫</button>
+    </div>
+    <div class="modal-actions">
+      <button class="ghost-btn danger" id="lineEditDel">商品を削除</button>
+      <span style="flex:1"></span>
+      <button class="ghost-btn" data-close>キャンセル</button>
+      <button class="primary-btn" id="lineEditOK">確定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 割引設定 -->
+<div class="modal" id="modalDiscount">
+  <div class="modal-box">
+    <h3>割引・割増</h3>
+    <div class="form-grid">
+      <label>種別
+        <select id="dcType">
+          <option value="none">なし</option>
+          <option value="amount">金額割引</option>
+          <option value="percent">%割引</option>
+          <option value="markup_amount">金額割増</option>
+          <option value="markup_percent">%割増</option>
+        </select>
+      </label>
+      <label>値 <input type="number" id="dcValue" placeholder="例：500 / 10"></label>
+    </div>
+    <div class="modal-actions">
+      <button class="ghost-btn" data-close>キャンセル</button>
+      <button class="primary-btn" id="dcOK">適用</button>
+    </div>
+  </div>
+</div>
+
+<!-- 伝票情報 -->
+<div class="modal" id="modalTicket">
+  <div class="modal-box">
+    <h3>伝票情報</h3>
+    <div class="form-grid">
+      <label>来店人数 <input type="number" id="tkPeople" value="1"></label>
+      <label>テーブル／席 <input type="text" id="tkTable"></label>
+      <label class="span2">顧客名 <input type="text" id="tkCustomer"></label>
+      <label class="span2">メモ <input type="text" id="tkMemo"></label>
+    </div>
+    <div class="modal-actions">
+      <button class="ghost-btn" data-close>キャンセル</button>
+      <button class="primary-btn" id="tkOK">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 一時保存伝票一覧 -->
+<div class="modal" id="modalHoldList">
+  <div class="modal-box wide">
+    <h3>一時保存伝票</h3>
+    <div id="holdList" class="hold-list"></div>
+    <div class="modal-actions">
+      <button class="ghost-btn" data-close>閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 支払い -->
+<div class="modal" id="modalPayment">
+  <div class="modal-box wide">
+    <h3>お会計</h3>
+    <div class="pay-layout">
+      <div class="pay-left">
+        <div class="pay-summary">
+          <div class="row"><span>合計</span><span id="payGrand">¥0</span></div>
+          <div class="row"><span>支払方法</span><span id="payMethodLabel">現金</span></div>
+          <div class="row"><span>お預かり</span><span id="payTendered">¥0</span></div>
+          <div class="row grand"><span>おつり</span><span id="payChange">¥0</span></div>
+        </div>
+        <div class="pay-methods" id="payMethods"></div>
+        <label class="rc-line">
+          <input type="checkbox" id="payIssueReceipt" checked> レシートを発行する
+        </label>
+        <label class="rc-line">
+          <input type="checkbox" id="payIssueInvoice"> 領収書も発行する
+        </label>
+      </div>
+      <div class="pay-right">
+        <div class="keypad-display" id="payDisplay">0</div>
+        <div class="quick-tender" id="quickTender"></div>
+        <div class="keypad" id="payKeypad">
+          <button>7</button><button>8</button><button>9</button>
+          <button>4</button><button>5</button><button>6</button>
+          <button>1</button><button>2</button><button>3</button>
+          <button>00</button><button>0</button><button data-act="back">⌫</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="ghost-btn" data-close>戻る</button>
+      <button class="primary-btn big" id="payConfirm">会計する</button>
+    </div>
+  </div>
+</div>
+
+<!-- レシート表示 -->
+<div class="modal" id="modalReceipt">
+  <div class="modal-box receipt-box">
+    <div class="receipt" id="receipt"></div>
+    <div class="modal-actions">
+      <button class="ghost-btn" id="rcPrint">🖨 印刷</button>
+      <button class="primary-btn" id="rcDone">完了</button>
+    </div>
+  </div>
+</div>
+
+<!-- 取引詳細／返品 -->
+<div class="modal" id="modalTxn">
+  <div class="modal-box">
+    <h3>取引詳細</h3>
+    <div id="txnDetail"></div>
+    <div class="modal-actions">
+      <button class="ghost-btn danger" id="txnVoid">取消（マイナス伝票）</button>
+      <span style="flex:1"></span>
+      <button class="ghost-btn" data-close>閉じる</button>
+      <button class="primary-btn" id="txnReprint">レシート再発行</button>
+    </div>
+  </div>
+</div>
+
+<!-- トースト -->
+<div id="toast" class="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
